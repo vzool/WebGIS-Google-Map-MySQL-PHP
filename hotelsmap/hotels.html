@@ -1,0 +1,88 @@
+<html>
+<head>
+<title> Hotels Information System </title>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDacd2RibeStMFpb4xOdQk2Gg5Gk-CjJoc"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script>
+function createMarker(latlng, hdata){
+	var mark = new google.maps.Marker({map:map, position:latlng, title:hdata.NAME});
+	google.maps.event.addDomListener(mark, 'click', function(evt){
+		info = new google.maps.InfoWindow();
+		var i = '<form id="frmData">' +
+			'<input type="hidden" name="ID" value="'+ hdata.ID +'">' + 
+			'<input type="text" name="NAME" value="'+ hdata.NAME +'"><br/>' +
+			'<input type="text" name="EMAIL" value="'+ hdata.EMAIL +'"><br/>' +
+			'<input type="text" name="PHONE" value="'+ hdata.PHONE +'"><br/>' +
+			'<input type="text" name="STARS" value="'+ hdata.STARS +'"><br/>' +
+			'<input type="text" name="LONGITUDE" value="'+ hdata.LONGITUDE +'"><br/>' +
+			'<input type="text" name="LATITUDE" value="'+ hdata.LATITUDE +'"><br/>' +
+			'<input type="text" name="DESC" value="'+ hdata.DESCRIPTION +'"><br/>' +
+			'<input type="button" value="UPDATE" onclick="updateHotel()">' + 
+			'<input type="button" value="DELETE" onclick="deletHotel()">' + 
+			'</form>';
+		info.setContent('' + i);
+		info.open(map , mark);
+	});
+}
+function loadMap(){
+	var mapOption = {
+		center:new google.maps.LatLng(15.6, 32.5), 
+		zoom:12,
+		mapTypeId:google.maps.MapTypeId.ROAD
+	};
+	map = new google.maps.Map(document.getElementById('mapDiv'), mapOption);
+	var hotelsData ;
+	$.post('getHotels.php', function(data){
+		hotelsData = JSON.parse(data);
+		for(i = 0 ; i < hotelsData.length; i++){
+			var latlng = new google.maps.LatLng(hotelsData[i].LATITUDE, hotelsData[i].LONGITUDE);
+			var hdata = hotelsData[i];
+			createMarker(latlng, hdata);
+		}
+	});
+	newHotel();
+}
+function newHotel(){
+	google.maps.event.addDomListener(map, 'click', function(evt){
+		var pos = new google.maps.LatLng(evt.latLng.lat(), evt.latLng.lng());
+		var mark = new google.maps.Marker({map:map, position:pos});
+		var info = new google.maps.InfoWindow();
+		info.setContent('<form id="frm">' +
+			'<input type="text" name="NAME" placeholder="Name ..."><br/>' + 
+			'<input type="text" name="EMAIL" placeholder="Email ..."><br/>' + 
+			'<input type="text" name="PHONE" placeholder="Phone ..."><br/>' + 
+			'<input type="text" name="STARS" placeholder="Stars ..."><br/>' + 
+			'<input type="text" name="DESC" placeholder="Description ..."><br/>' + 
+			'<input type="text" name="LONGITUDE" value="'+ evt.latLng.lng() +'"><br/>' + 
+			'<input type="text" name="LATITUDE" value="'+ evt.latLng.lat() +'"><br/>' +
+			'<input type="button" value=" Save " onclick="saveHotel();"></form>'
+		);
+		info.open(map, mark);
+	});
+}
+function saveHotel(){
+	var frm = $("#frm").serializeArray();
+	$.post("addHotel.php" , frm, function(data){
+		alert(data);
+	});
+}
+function updateHotel(){
+	var frmData = $("#frmData").serializeArray();
+	$.post("updateHotel.php", frmData, function(data){
+		alert(data);
+	});
+}
+function deletHotel(){
+	var frmData = $("#frmData").serializeArray();
+	$.post("deleteHotel.php", frmData, function(data){
+		alert(data);
+	});
+}
+google.maps.event.addDomListener(window, 'load', loadMap);
+</script>
+</head>
+<body>
+<div id="mapDiv" style="width:600px; height:600px;"></div>
+<a href="exportHotels.php"> EXPORT DATA to CSV</a>
+</body>
+</html>
